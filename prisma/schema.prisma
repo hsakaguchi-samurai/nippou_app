@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String?   // CA, RA, マーケ, 企画アシスタント
+  slackUserId   String?
+
+  accounts      Account[]
+  sessions      Session[]
+  reports       DailyReport[]
+  weeklyGoals   WeeklyGoal[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model DailyReport {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime @db.Date
+  status         String   @default("draft") // draft, sent
+  sentAt         DateTime?
+  slackMessageTs String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries ReportEntry[]
+
+  @@unique([userId, date])
+}
+
+model ReportEntry {
+  id              String  @id @default(cuid())
+  reportId        String
+  title           String
+  category        String
+  durationMinutes Int
+  source          String  @default("manual") // calendar, manual
+  calendarEventId String?
+  memo            String? @db.Text
+
+  report DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model WeeklyGoal {
+  id            String   @id @default(cuid())
+  userId        String
+  weekStartDate DateTime @db.Date
+  content       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress DailyProgress[]
+
+  @@unique([userId, weekStartDate, content])
+}
+
+model DailyProgress {
+  id           String   @id @default(cuid())
+  weeklyGoalId String
+  date         DateTime @db.Date
+  note         String?  @db.Text
+  percentage   Int      @default(0)
+
+  weeklyGoal WeeklyGoal @relation(fields: [weeklyGoalId], references: [id], onDelete: Cascade)
+
+  @@unique([weeklyGoalId, date])
+}
