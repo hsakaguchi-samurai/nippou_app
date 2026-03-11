@@ -47,11 +47,16 @@ export default function GoalsPage() {
 
   const addGoal = async () => {
     if (!newGoal.trim()) return;
-    await fetch("/api/goals", {
+    const res = await fetch("/api/goals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ weekStartDate: weekStartISO, content: newGoal }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || `追加に失敗しました (${res.status})`);
+      return;
+    }
     setNewGoal("");
     loadGoals();
   };
