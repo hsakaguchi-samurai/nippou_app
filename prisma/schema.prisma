@@ -101,11 +101,13 @@ model WeeklyGoal {
 }
 
 model DailyProgress {
-  id           String   @id @default(cuid())
-  weeklyGoalId String
-  date         DateTime @db.Date
-  note         String?  @db.Text
-  percentage   Int      @default(0)
+  id              String   @id @default(cuid())
+  weeklyGoalId    String
+  date            DateTime @db.Date
+  note            String?  @db.Text
+  percentage      Int      @default(0)
+  progressCurrent Int?
+  progressTotal   Int?
 
   weeklyGoal WeeklyGoal @relation(fields: [weeklyGoalId], references: [id], onDelete: Cascade)
 

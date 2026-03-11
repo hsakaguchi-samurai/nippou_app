@@ -5,8 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
 import type { ReportEntryData } from "@/types";
 
+interface GoalProgress {
+  goalId: string;
+  content: string;
+  progressCurrent: string;
+  progressTotal: string;
+  percentage: string;
+}
+
 interface ReportPreviewProps {
   entries: ReportEntryData[];
+  goalProgresses?: GoalProgress[];
   onSend: () => void;
   sending: boolean;
   reportId: string | null;
@@ -14,6 +23,7 @@ interface ReportPreviewProps {
 
 export function ReportPreview({
   entries,
+  goalProgresses = [],
   onSend,
   sending,
   reportId,
@@ -42,6 +52,25 @@ export function ReportPreview({
               )}
             </div>
           ))}
+          {goalProgresses.length > 0 && (
+            <>
+              <p className="font-bold mt-4">今週の目標進捗</p>
+              {goalProgresses.map((g) => {
+                const hasRatio = g.progressCurrent !== "" && g.progressTotal !== "";
+                const hasPct = g.percentage !== "";
+                const progress = hasRatio
+                  ? `${g.progressCurrent}/${g.progressTotal} (${g.percentage}%)`
+                  : hasPct
+                  ? `${g.percentage}%`
+                  : "未入力";
+                return (
+                  <div key={g.goalId} className="mt-2">
+                    <p>・{g.content}: {progress}</p>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
       </CardContent>
       <CardFooter className="justify-end">

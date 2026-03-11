@@ -13,13 +13,19 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { date, percentage, note } = await req.json();
+  const { date, percentage, note, progressCurrent, progressTotal } = await req.json();
 
   // Verify ownership
   const goal = await prisma.weeklyGoal.findUnique({ where: { id } });
   if (!goal || goal.userId !== session.user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Auto-calculate percentage from current/total if provided
+  const computedPercentage =
+    progressCurrent != null && progressTotal != null && progressTotal > 0
+      ? Math.round((progressCurrent / progressTotal) * 100)
+      : (percentage ?? 0);
 
   const progress = await prisma.dailyProgress.upsert({
     where: {
@@ -28,12 +34,14 @@ export async function POST(
         date: new Date(date),
       },
     },
-    update: { percentage, note },
+    update: { percentage: computedPercentage, note, progressCurrent, progressTotal },
     create: {
       weeklyGoalId: id,
       date: new Date(date),
-      percentage,
+      percentage: computedPercentage,
       note,
+      progressCurrent,
+      progressTotal,
     },
   });
 

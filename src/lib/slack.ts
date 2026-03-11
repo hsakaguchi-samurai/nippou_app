@@ -25,8 +25,11 @@ export async function sendReportToChannel(payload: ReportPayload) {
       ? payload.goals
           .map((g) => {
             const pct = g.progress?.percentage ?? 0;
+            const cur = g.progress?.progressCurrent;
+            const tot = g.progress?.progressTotal;
+            const ratio = cur != null && tot != null ? `${cur}/${tot} ` : "";
             const note = g.progress?.note ? ` - ${g.progress.note}` : "";
-            return `  ・${g.content}: ${pct}%${note}`;
+            return `  ・${g.content}: ${ratio}${pct}%${note}`;
           })
           .join("\n")
       : "  (目標未設定)";

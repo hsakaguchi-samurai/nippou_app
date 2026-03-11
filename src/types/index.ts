@@ -41,6 +41,8 @@ export interface DailyProgressData {
   date: string;
   note?: string;
   percentage: number;
+  progressCurrent?: number | null;
+  progressTotal?: number | null;
 }
 
 export interface UserProfile {

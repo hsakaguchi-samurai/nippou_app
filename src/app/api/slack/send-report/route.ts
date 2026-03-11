@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
               date: g.progress[0].date.toISOString().split("T")[0],
               note: g.progress[0].note ?? undefined,
               percentage: g.progress[0].percentage,
+              progressCurrent: g.progress[0].progressCurrent ?? undefined,
+              progressTotal: g.progress[0].progressTotal ?? undefined,
             }
           : null,
       })),

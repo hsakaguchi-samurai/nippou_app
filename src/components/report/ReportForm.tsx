@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ReportEntryRow } from "./ReportEntryRow";
 import { ManualEventForm } from "./ManualEventForm";
 import { ReportPreview } from "./ReportPreview";
+import { GoalProgressSection } from "./GoalProgressSection";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, Loader2, CheckCircle2 } from "lucide-react";
@@ -23,6 +24,9 @@ export function ReportForm() {
   const [date, setDate] = useState(getTodayISO());
   const [entries, setEntries] = useState<ReportEntryData[]>([]);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [goalProgresses, setGoalProgresses] = useState<{
+    goalId: string; content: string; progressCurrent: string; progressTotal: string; percentage: string;
+  }[]>([]);
   const [reportStatus, setReportStatus] = useState<string>("draft");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -177,6 +181,24 @@ export function ReportForm() {
     }
     setSending(true);
     try {
+      // Save goal progress first
+      await Promise.all(
+        goalProgresses
+          .filter((g) => g.percentage !== "" || g.progressCurrent !== "")
+          .map((g) =>
+            fetch(`/api/goals/${g.goalId}/progress`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                date,
+                progressCurrent: g.progressCurrent !== "" ? Number(g.progressCurrent) : null,
+                progressTotal: g.progressTotal !== "" ? Number(g.progressTotal) : null,
+                percentage: g.percentage !== "" ? Number(g.percentage) : 0,
+              }),
+            })
+          )
+      );
+
       const res = await fetch("/api/slack/send-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -308,8 +330,11 @@ export function ReportForm() {
         </CardContent>
       </Card>
 
+      <GoalProgressSection date={date} onChange={setGoalProgresses} />
+
       <ReportPreview
         entries={entries}
+        goalProgresses={goalProgresses}
         onSend={handleSend}
         sending={sending}
         reportId={reportId}
