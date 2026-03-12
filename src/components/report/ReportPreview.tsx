@@ -21,6 +21,19 @@ interface ReportPreviewProps {
   reportId: string | null;
 }
 
+const FIXED_FOOTER = `★ヨミ表
+https://docs.google.com/spreadsheets/d/1fU9dcaA-dk4LHbzeofxa9Xj6wvFEvqosFTajG8dQFak/edit?gid=408537210#gid=408537210
+★週次KPI
+https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g5gc/edit?gid=2072944379#gid=2072944379&range=A1`;
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Tokyo",
+  });
+}
+
 export function ReportPreview({
   entries,
   goalProgresses = [],
@@ -34,43 +47,64 @@ export function ReportPreview({
 
   if (entries.length === 0) return null;
 
+  // Group by category
+  const categoryMap = new Map<string, ReportEntryData[]>();
+  for (const e of entries) {
+    const cat = e.category || "未分類";
+    if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+    categoryMap.get(cat)!.push(e);
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>プレビュー</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md bg-muted p-4 font-mono text-sm whitespace-pre-wrap">
+        <div className="rounded-md bg-muted p-4 font-mono text-sm whitespace-pre-wrap space-y-1">
+          <p className="text-muted-foreground text-xs">@自分 @リーダー</p>
+          <p className="font-bold">日報</p>
+          <p className="text-muted-foreground">━━━━━━━━━━━━━</p>
           <p className="font-bold">業務内容 (合計: {hours}時間{mins}分)</p>
-          {entries.map((e, i) => (
-            <div key={i} className="mt-2">
-              <p>
-                {e.category || "未分類"}: {e.title} ({e.durationMinutes}分)
-              </p>
-              {e.memo && (
-                <p className="text-muted-foreground ml-4">メモ: {e.memo}</p>
-              )}
-            </div>
-          ))}
-          {goalProgresses.length > 0 && (
-            <>
-              <p className="font-bold mt-4">今週の目標進捗</p>
-              {goalProgresses.map((g) => {
-                const hasRatio = g.progressCurrent !== "" && g.progressTotal !== "";
-                const hasPct = g.percentage !== "";
-                const progress = hasRatio
-                  ? `${g.progressCurrent}/${g.progressTotal} (${g.percentage}%)`
-                  : hasPct
-                  ? `${g.percentage}%`
-                  : "未入力";
+
+          {Array.from(categoryMap.entries()).map(([category, catEntries], ci) => (
+            <div key={ci} className={ci > 0 ? "mt-3" : "mt-1"}>
+              <p className="font-semibold">{category}</p>
+              {catEntries.map((e, i) => {
+                const timeRange =
+                  e.source === "calendar" && e.startTime && e.endTime
+                    ? ` ${formatTime(e.startTime)}〜${formatTime(e.endTime)}`
+                    : "";
                 return (
-                  <div key={g.goalId} className="mt-2">
-                    <p>・{g.content}: {progress}</p>
+                  <div key={i}>
+                    <p>・{e.title}{timeRange} ({e.durationMinutes}分)</p>
+                    {e.memo && (
+                      <p className="text-muted-foreground ml-4">メモ: {e.memo}</p>
+                    )}
                   </div>
                 );
               })}
-            </>
+            </div>
+          ))}
+
+          {goalProgresses.length > 0 && (
+            <div className="mt-3">
+              <p className="font-bold">今週の目標進捗</p>
+              {goalProgresses.map((g) => {
+                const hasRatio = g.progressCurrent !== "" && g.progressTotal !== "";
+                const hasPct = g.percentage !== "";
+                const ratio = hasRatio ? `${g.progressCurrent}/${g.progressTotal} ` : "";
+                const pct = hasPct ? `${g.percentage}%` : "未入力";
+                return (
+                  <p key={g.goalId}>・{g.content}: {ratio}{pct}</p>
+                );
+              })}
+            </div>
           )}
+
+          <div className="mt-3 text-muted-foreground text-xs">
+            <p>{FIXED_FOOTER}</p>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="justify-end">
