@@ -52,6 +52,7 @@ export interface UserProfile {
   image: string | null;
   role: string | null; // comma-separated roles e.g. "CA,RA"
   slackUserId: string | null;
+  leaderSlackUserId: string | null;
 }
 
 export function parseRoles(role: string | null): Role[] {

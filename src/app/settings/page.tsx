@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [slackUserId, setSlackUserId] = useState("");
+  const [leaderSlackUserId, setLeaderSlackUserId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function SettingsPage() {
         setUser(data);
         setRoles(parseRoles(data.role));
         setSlackUserId(data.slackUserId ?? "");
+        setLeaderSlackUserId(data.leaderSlackUserId ?? "");
       });
   }, []);
 
@@ -45,6 +47,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           role: roles.length > 0 ? roles.join(",") : null,
           slackUserId: slackUserId || null,
+          leaderSlackUserId: leaderSlackUserId || null,
         }),
       });
       const updated = await res.json();
@@ -119,7 +122,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="slackUserId">Slack ユーザーID</Label>
+            <Label htmlFor="slackUserId">自分のSlack ユーザーID（日報送信時にメンション）</Label>
             <Input
               id="slackUserId"
               value={slackUserId}
@@ -128,6 +131,18 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               SlackのプロフィールからユーザーIDを確認できます
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="leaderSlackUserId">リーダーのSlack ユーザーID（日報送信時にメンション）</Label>
+            <Input
+              id="leaderSlackUserId"
+              value={leaderSlackUserId}
+              onChange={(e) => setLeaderSlackUserId(e.target.value)}
+              placeholder="U0123456789"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              未設定の場合はメンションされません
             </p>
           </div>
         </CardContent>

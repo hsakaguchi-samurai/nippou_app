@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
     const messageTs = await sendReportToChannel({
       userName: report.user.name ?? "Unknown",
       date: formatDate(report.date),
+      selfSlackUserId: report.user.slackUserId ?? undefined,
+      leaderSlackUserId: (report.user as { leaderSlackUserId?: string | null }).leaderSlackUserId ?? undefined,
       entries: report.entries.map((e) => ({
         title: e.title,
         category: e.category,

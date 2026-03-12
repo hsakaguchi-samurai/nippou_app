@@ -8,7 +8,14 @@ interface ReportPayload {
   date: string;
   entries: ReportEntryData[];
   goals: { content: string; progress: DailyProgressData | null }[];
+  selfSlackUserId?: string | null;
+  leaderSlackUserId?: string | null;
 }
+
+const FIXED_FOOTER = `★ヨミ表
+https://docs.google.com/spreadsheets/d/1fU9dcaA-dk4LHbzeofxa9Xj6wvFEvqosFTajG8dQFak/edit?gid=408537210#gid=408537210
+★週次KPI
+https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g5gc/edit?gid=2072944379#gid=2072944379&range=A1`;
 
 export async function sendReportToChannel(payload: ReportPayload) {
   const channelId = process.env.SLACK_CHANNEL_ID!;
@@ -41,7 +48,13 @@ export async function sendReportToChannel(payload: ReportPayload) {
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
 
+  const mentions = [
+    payload.selfSlackUserId ? `<@${payload.selfSlackUserId}>` : null,
+    payload.leaderSlackUserId ? `<@${payload.leaderSlackUserId}>` : null,
+  ].filter(Boolean).join(" ");
+
   const text = [
+    mentions,
     `*日報 - ${payload.userName} (${payload.date})*`,
     `━━━━━━━━━━━━━`,
     `*業務内容* (合計: ${hours}時間${mins}分)`,
@@ -49,7 +62,9 @@ export async function sendReportToChannel(payload: ReportPayload) {
     ``,
     `*今週の目標進捗*`,
     goalLines,
-  ].join("\n");
+    ``,
+    FIXED_FOOTER,
+  ].filter(Boolean).join("\n");
 
   const result = await slack.chat.postMessage({
     channel: channelId,

@@ -18,6 +18,7 @@ export async function GET() {
       image: true,
       role: true,
       slackUserId: true,
+      leaderSlackUserId: true,
     },
   });
 
@@ -31,13 +32,14 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { role, slackUserId } = body;
+  const { role, slackUserId, leaderSlackUserId } = body;
 
   const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
       ...(role !== undefined && { role }),
       ...(slackUserId !== undefined && { slackUserId }),
+      ...(leaderSlackUserId !== undefined && { leaderSlackUserId }),
     },
     select: {
       id: true,
@@ -46,6 +48,7 @@ export async function PUT(req: NextRequest) {
       image: true,
       role: true,
       slackUserId: true,
+      leaderSlackUserId: true,
     },
   });
 
