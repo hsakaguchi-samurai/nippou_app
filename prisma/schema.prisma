@@ -92,6 +92,7 @@ model WeeklyGoal {
   userId        String
   weekStartDate DateTime @db.Date
   content       String
+  targetTotal   Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

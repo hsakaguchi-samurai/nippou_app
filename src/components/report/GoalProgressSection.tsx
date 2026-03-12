@@ -38,14 +38,18 @@ export function GoalProgressSection({ date, onChange }: GoalProgressSectionProps
     const mapped: GoalProgress[] = data.map((g: {
       id: string;
       content: string;
+      targetTotal?: number | null;
       progress: { progressCurrent?: number; progressTotal?: number; percentage?: number }[];
     }) => {
       const p = g.progress[0];
+      // progressTotalはgoalのtargetTotalを優先、なければ過去progressのtotalを使用
+      const defaultTotal = g.targetTotal != null ? String(g.targetTotal)
+        : p?.progressTotal != null ? String(p.progressTotal) : "";
       return {
         goalId: g.id,
         content: g.content,
         progressCurrent: p?.progressCurrent != null ? String(p.progressCurrent) : "",
-        progressTotal: p?.progressTotal != null ? String(p.progressTotal) : "",
+        progressTotal: defaultTotal,
         percentage: p?.percentage != null ? String(p.percentage) : "",
       };
     });

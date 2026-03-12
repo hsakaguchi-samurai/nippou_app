@@ -23,6 +23,7 @@ interface WeeklyGoal {
   id: string;
   content: string;
   weekStartDate: string;
+  targetTotal: number | null;
   progress: GoalProgress[];
 }
 
@@ -30,6 +31,7 @@ export default function GoalsPage() {
   const [weekStart, setWeekStart] = useState(getWeekStartDate());
   const [goals, setGoals] = useState<WeeklyGoal[]>([]);
   const [newGoal, setNewGoal] = useState("");
+  const [newTargetTotal, setNewTargetTotal] = useState("");
   const today = formatDateISO(new Date());
 
   const weekDays = getWeekDays(weekStart);
@@ -50,7 +52,11 @@ export default function GoalsPage() {
     const res = await fetch("/api/goals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ weekStartDate: weekStartISO, content: newGoal }),
+      body: JSON.stringify({
+        weekStartDate: weekStartISO,
+        content: newGoal,
+        targetTotal: newTargetTotal ? Number(newTargetTotal) : null,
+      }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -58,6 +64,7 @@ export default function GoalsPage() {
       return;
     }
     setNewGoal("");
+    setNewTargetTotal("");
     loadGoals();
   };
 
@@ -104,17 +111,32 @@ export default function GoalsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Add goal form */}
-          <div className="flex gap-2">
-            <Input
-              value={newGoal}
-              onChange={(e) => setNewGoal(e.target.value)}
-              placeholder="新しい目標を入力..."
-              onKeyDown={(e) => e.key === "Enter" && addGoal()}
-            />
-            <Button onClick={addGoal} disabled={!newGoal.trim()}>
-              <Plus className="h-4 w-4 mr-2" />
-              追加
-            </Button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={newGoal}
+                onChange={(e) => setNewGoal(e.target.value)}
+                placeholder="新しい目標を入力..."
+                onKeyDown={(e) => e.key === "Enter" && addGoal()}
+                className="flex-1"
+              />
+              <div className="flex items-center gap-1 shrink-0">
+                <Input
+                  type="number"
+                  min={1}
+                  value={newTargetTotal}
+                  onChange={(e) => setNewTargetTotal(e.target.value)}
+                  placeholder="目標数"
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground whitespace-nowrap">件</span>
+              </div>
+              <Button onClick={addGoal} disabled={!newGoal.trim()}>
+                <Plus className="h-4 w-4 mr-2" />
+                追加
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">目標数は任意（入力すると日報の進捗欄に自動反映されます）</p>
           </div>
 
           <Separator />
@@ -135,7 +157,12 @@ export default function GoalsPage() {
                   <div key={goal.id} className="rounded-lg border p-4 space-y-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="font-medium">{goal.content}</p>
+                        <p className="font-medium">
+                          {goal.content}
+                          {goal.targetTotal != null && (
+                            <span className="ml-2 text-sm font-normal text-muted-foreground">（目標: {goal.targetTotal}件）</span>
+                          )}
+                        </p>
                         <div className="flex items-center gap-2 mt-2">
                           <Progress value={latestPct} className="flex-1" />
                           <span className="text-sm font-medium w-12 text-right">
