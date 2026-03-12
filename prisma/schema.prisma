@@ -83,6 +83,8 @@ model ReportEntry {
   source          String  @default("manual") // calendar, manual
   calendarEventId String?
   memo            String? @db.Text
+  startTime       String?
+  endTime         String?
 
   report DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }

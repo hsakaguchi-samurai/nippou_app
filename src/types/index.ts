@@ -20,6 +20,8 @@ export interface ReportEntryData {
   source: EntrySource;
   calendarEventId?: string;
   memo?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface DailyReportData {

@@ -79,6 +79,8 @@ export async function POST(req: NextRequest) {
               source: string;
               calendarEventId?: string;
               memo?: string;
+              startTime?: string;
+              endTime?: string;
             }) => ({
               title: e.title,
               category: e.category,
@@ -86,6 +88,8 @@ export async function POST(req: NextRequest) {
               source: e.source,
               calendarEventId: e.calendarEventId,
               memo: e.memo,
+              startTime: e.startTime,
+              endTime: e.endTime,
             })
           ),
         },

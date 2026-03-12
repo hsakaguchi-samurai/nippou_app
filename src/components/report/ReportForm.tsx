@@ -46,6 +46,8 @@ export function ReportForm() {
         durationMinutes: e.durationMinutes,
         source: "calendar" as const,
         calendarEventId: e.id,
+        startTime: e.start,
+        endTime: e.end,
       }));
       setEntries(calendarEntries);
     } catch {
@@ -70,6 +72,8 @@ export function ReportForm() {
             source: e.source,
             calendarEventId: e.calendarEventId,
             memo: e.memo,
+            startTime: e.startTime,
+            endTime: e.endTime,
           }))
         );
       } else {
@@ -106,6 +110,8 @@ export function ReportForm() {
           durationMinutes: e.durationMinutes,
           source: "calendar" as const,
           calendarEventId: e.id,
+          startTime: e.start,
+          endTime: e.end,
         }));
 
       setEntries((prev) => [...prev, ...newEntries]);

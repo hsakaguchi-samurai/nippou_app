@@ -20,12 +20,30 @@ https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g
 export async function sendReportToChannel(payload: ReportPayload) {
   const channelId = process.env.SLACK_CHANNEL_ID!;
 
-  const entryLines = payload.entries
-    .map(
-      (e) =>
-        `  *${e.category}*: ${e.title} (${e.durationMinutes}分)${e.memo ? `\n    メモ: ${e.memo}` : ""}`
-    )
-    .join("\n");
+  const categoryMap = new Map<string, ReportEntryData[]>();
+  for (const e of payload.entries) {
+    if (!categoryMap.has(e.category)) categoryMap.set(e.category, []);
+    categoryMap.get(e.category)!.push(e);
+  }
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Tokyo",
+    });
+
+  const entryLines = Array.from(categoryMap.entries())
+    .map(([category, entries]) => {
+      const lines = entries.map((e) => {
+        const timeRange =
+          e.source === "calendar" && e.startTime && e.endTime
+            ? ` ${formatTime(e.startTime)}〜${formatTime(e.endTime)}`
+            : "";
+        return `・${e.title}${timeRange} (${e.durationMinutes}分)${e.memo ? `\n    メモ: ${e.memo}` : ""}`;
+      });
+      return `${category}\n${lines.join("\n")}`;
+    })
+    .join("\n\n");
 
   const goalLines =
     payload.goals.length > 0
