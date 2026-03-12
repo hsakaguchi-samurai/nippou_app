@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { getWeekStartDate, getWeekDays, formatDateISO, formatDate } from "@/lib/utils/date";
 import { addDays } from "date-fns";
 
@@ -31,6 +31,10 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<WeeklyGoal[]>([]);
   const [newGoal, setNewGoal] = useState("");
   const [newTargetTotal, setNewTargetTotal] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editTargetTotal, setEditTargetTotal] = useState("");
+  const isComposing = useRef(false);
   const today = formatDateISO(new Date());
 
   const weekDays = getWeekDays(weekStart);
@@ -72,6 +76,26 @@ export default function GoalsPage() {
     loadGoals();
   };
 
+  const startEdit = (goal: WeeklyGoal) => {
+    setEditingId(goal.id);
+    setEditContent(goal.content);
+    setEditTargetTotal(goal.targetTotal != null ? String(goal.targetTotal) : "");
+  };
+
+  const saveEdit = async (id: string) => {
+    await fetch(`/api/goals/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: editContent,
+        targetTotal: editTargetTotal ? Number(editTargetTotal) : null,
+      }),
+    });
+    setEditingId(null);
+    loadGoals();
+  };
+
+  const cancelEdit = () => setEditingId(null);
 
   const prevWeek = () => setWeekStart(addDays(weekStart, -7));
   const nextWeek = () => setWeekStart(addDays(weekStart, 7));
@@ -103,7 +127,9 @@ export default function GoalsPage() {
                 value={newGoal}
                 onChange={(e) => setNewGoal(e.target.value)}
                 placeholder="新しい目標を入力..."
-                onKeyDown={(e) => e.key === "Enter" && addGoal()}
+                onCompositionStart={() => { isComposing.current = true; }}
+                onCompositionEnd={() => { isComposing.current = false; }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !isComposing.current) addGoal(); }}
                 className="flex-1"
               />
               <div className="flex items-center gap-1 shrink-0">
@@ -134,7 +160,6 @@ export default function GoalsPage() {
           ) : (
             <div className="space-y-6">
               {goals.map((goal) => {
-                // 前日までの最新進捗
                 const yesterday = formatDateISO(addDays(new Date(today), -1));
                 const prevProgress = goal.progress
                   .filter((p) => p.date.split("T")[0] <= yesterday)
@@ -142,59 +167,101 @@ export default function GoalsPage() {
                 const prevPct = prevProgress?.percentage ?? 0;
                 const prevCurrent = prevProgress?.progressCurrent;
                 const prevDate = prevProgress?.date?.split("T")[0];
+                const isEditing = editingId === goal.id;
 
                 return (
                   <div key={goal.id} className="rounded-lg border p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="font-medium">
-                          {goal.content}
-                          {goal.targetTotal != null && (
-                            <span className="ml-2 text-sm font-normal text-muted-foreground">（目標: {goal.targetTotal}件）</span>
-                          )}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Progress value={prevPct} className="flex-1" />
-                          <span className="text-sm font-medium w-12 text-right">{prevPct}%</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {prevDate
-                            ? `${prevDate} 時点: ${prevCurrent != null && goal.targetTotal != null ? `${prevCurrent}/${goal.targetTotal}件` : `${prevPct}%`}`
-                            : "進捗なし"}
-                        </p>
+                        {isEditing ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              onCompositionStart={() => { isComposing.current = true; }}
+                              onCompositionEnd={() => { isComposing.current = false; }}
+                              onKeyDown={(e) => { if (e.key === "Enter" && !isComposing.current) saveEdit(goal.id); }}
+                              className="font-medium"
+                            />
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={1}
+                                value={editTargetTotal}
+                                onChange={(e) => setEditTargetTotal(e.target.value)}
+                                placeholder="目標数"
+                                className="w-24"
+                              />
+                              <span className="text-sm text-muted-foreground">件</span>
+                              <Button size="sm" onClick={() => saveEdit(goal.id)}>
+                                <Check className="h-3 w-3 mr-1" />保存
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                                <X className="h-3 w-3 mr-1" />キャンセル
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="font-medium">
+                              {goal.content}
+                              {goal.targetTotal != null && (
+                                <span className="ml-2 text-sm font-normal text-muted-foreground">（目標: {goal.targetTotal}件）</span>
+                              )}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Progress value={prevPct} className="flex-1" />
+                              <span className="text-sm font-medium w-12 text-right">{prevPct}%</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {prevDate
+                                ? `${prevDate} 時点: ${prevCurrent != null && goal.targetTotal != null ? `${prevCurrent}/${goal.targetTotal}件` : `${prevPct}%`}`
+                                : "進捗なし"}
+                            </p>
+                          </>
+                        )}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteGoal(goal.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {!isEditing && (
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(goal)}>
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteGoal(goal.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Week overview */}
-                    <div className="grid grid-cols-5 gap-2 text-xs">
-                      {weekDays.map((day) => {
-                        const dayISO = formatDateISO(day);
-                        const prog = goal.progress.find(
-                          (p) => p.date.split("T")[0] === dayISO
-                        );
-                        const isToday = dayISO === today;
-                        return (
-                          <div
-                            key={dayISO}
-                            className={`rounded p-2 text-center ${
-                              isToday
-                                ? "bg-primary/10 border border-primary/20"
-                                : "bg-muted/30"
-                            }`}
-                          >
-                            <p className="font-medium">
-                              {formatDate(day).split("(")[1]?.replace(")", "") ?? ""}
-                            </p>
-                            <p className="text-muted-foreground">
-                              {prog ? `${prog.percentage}%` : "-"}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {!isEditing && (
+                      <div className="grid grid-cols-5 gap-2 text-xs">
+                        {weekDays.map((day) => {
+                          const dayISO = formatDateISO(day);
+                          const prog = goal.progress.find(
+                            (p) => p.date.split("T")[0] === dayISO
+                          );
+                          const isToday = dayISO === today;
+                          return (
+                            <div
+                              key={dayISO}
+                              className={`rounded p-2 text-center ${
+                                isToday
+                                  ? "bg-primary/10 border border-primary/20"
+                                  : "bg-muted/30"
+                              }`}
+                            >
+                              <p className="font-medium">
+                                {formatDate(day).split("(")[1]?.replace(")", "") ?? ""}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {prog ? `${prog.percentage}%` : "-"}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
