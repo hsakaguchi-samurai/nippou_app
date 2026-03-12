@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CategorySelect } from "./CategorySelect";
-import { Trash2, Calendar, PenLine } from "lucide-react";
+import { Trash2, Calendar, PenLine, ChevronDown, ChevronUp } from "lucide-react";
 import type { Role, ReportEntryData } from "@/types";
 
 interface ReportEntryRowProps {
@@ -21,6 +22,8 @@ export function ReportEntryRow({
   onChange,
   onDelete,
 }: ReportEntryRowProps) {
+  const [memoOpen, setMemoOpen] = useState(!!entry.memo);
+
   return (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -63,14 +66,25 @@ export function ReportEntryRow({
           />
           <span className="text-sm text-muted-foreground">分</span>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-muted-foreground h-7 px-2"
+          onClick={() => setMemoOpen(!memoOpen)}
+        >
+          {memoOpen ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+          メモ
+        </Button>
       </div>
 
-      <Textarea
-        value={entry.memo ?? ""}
-        onChange={(e) => onChange({ ...entry, memo: e.target.value })}
-        placeholder="メモ（任意）"
-        rows={2}
-      />
+      {memoOpen && (
+        <Textarea
+          value={entry.memo ?? ""}
+          onChange={(e) => onChange({ ...entry, memo: e.target.value })}
+          placeholder="メモ（任意）"
+          rows={2}
+        />
+      )}
     </div>
   );
 }

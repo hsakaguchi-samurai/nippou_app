@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Target, Settings, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { FileText, Target, Settings, CheckCircle, Clock, AlertCircle, BarChart2 } from "lucide-react";
 import Link from "next/link";
 import { getWeekStartDate, getWeekDays, formatDateISO, formatDate } from "@/lib/utils/date";
 import { parseRoles } from "@/types";
@@ -175,6 +175,14 @@ export default function DashboardPage() {
             <CardContent className="p-4 flex items-center gap-3">
               <Target className="h-5 w-5 text-primary" />
               <span className="font-medium">週次目標</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/analytics">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <BarChart2 className="h-5 w-5 text-primary" />
+              <span className="font-medium">時間分析</span>
             </CardContent>
           </Card>
         </Link>

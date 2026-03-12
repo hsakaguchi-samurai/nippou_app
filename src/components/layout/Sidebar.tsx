@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
-import { LayoutDashboard, FileText, Target, Settings, Menu, X } from "lucide-react";
+import { LayoutDashboard, FileText, Target, Settings, Menu, X, BarChart2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/", label: "ダッシュボード", icon: LayoutDashboard },
   { href: "/report", label: "日報作成", icon: FileText },
   { href: "/goals", label: "週次目標", icon: Target },
+  { href: "/analytics", label: "時間分析", icon: BarChart2 },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 
