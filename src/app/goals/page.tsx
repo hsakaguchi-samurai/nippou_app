@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -17,6 +15,7 @@ interface GoalProgress {
   date: string;
   percentage: number;
   note?: string;
+  progressCurrent?: number | null;
 }
 
 interface WeeklyGoal {
@@ -73,19 +72,6 @@ export default function GoalsPage() {
     loadGoals();
   };
 
-  const updateProgress = async (
-    goalId: string,
-    date: string,
-    percentage: number,
-    note?: string
-  ) => {
-    await fetch(`/api/goals/${goalId}/progress`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, percentage, note }),
-    });
-    loadGoals();
-  };
 
   const prevWeek = () => setWeekStart(addDays(weekStart, -7));
   const nextWeek = () => setWeekStart(addDays(weekStart, 7));
@@ -148,13 +134,17 @@ export default function GoalsPage() {
           ) : (
             <div className="space-y-6">
               {goals.map((goal) => {
-                const todayProgress = goal.progress.find(
-                  (p) => p.date.split("T")[0] === today
-                );
-                const latestPct = todayProgress?.percentage ?? 0;
+                // 前日までの最新進捗
+                const yesterday = formatDateISO(addDays(new Date(today), -1));
+                const prevProgress = goal.progress
+                  .filter((p) => p.date.split("T")[0] <= yesterday)
+                  .sort((a, b) => b.date.localeCompare(a.date))[0];
+                const prevPct = prevProgress?.percentage ?? 0;
+                const prevCurrent = prevProgress?.progressCurrent;
+                const prevDate = prevProgress?.date?.split("T")[0];
 
                 return (
-                  <div key={goal.id} className="rounded-lg border p-4 space-y-4">
+                  <div key={goal.id} className="rounded-lg border p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <p className="font-medium">
@@ -164,60 +154,18 @@ export default function GoalsPage() {
                           )}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <Progress value={latestPct} className="flex-1" />
-                          <span className="text-sm font-medium w-12 text-right">
-                            {latestPct}%
-                          </span>
+                          <Progress value={prevPct} className="flex-1" />
+                          <span className="text-sm font-medium w-12 text-right">{prevPct}%</span>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {prevDate
+                            ? `${prevDate} 時点: ${prevCurrent != null && goal.targetTotal != null ? `${prevCurrent}/${goal.targetTotal}件` : `${prevPct}%`}`
+                            : "進捗なし"}
+                        </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteGoal(goal.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => deleteGoal(goal.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
-                    </div>
-
-                    {/* Daily progress input for today */}
-                    <div className="bg-muted/50 rounded-md p-3 space-y-2">
-                      <Label className="text-xs text-muted-foreground">
-                        本日の進捗
-                      </Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={5}
-                          value={todayProgress?.percentage ?? 0}
-                          onChange={(e) =>
-                            updateProgress(
-                              goal.id,
-                              today,
-                              parseInt(e.target.value),
-                              todayProgress?.note
-                            )
-                          }
-                          className="flex-1 h-2"
-                        />
-                        <span className="text-sm font-medium w-12 text-right">
-                          {todayProgress?.percentage ?? 0}%
-                        </span>
-                      </div>
-                      <Textarea
-                        value={todayProgress?.note ?? ""}
-                        onChange={(e) =>
-                          updateProgress(
-                            goal.id,
-                            today,
-                            todayProgress?.percentage ?? 0,
-                            e.target.value
-                          )
-                        }
-                        placeholder="進捗メモ（任意）"
-                        rows={2}
-                      />
                     </div>
 
                     {/* Week overview */}
