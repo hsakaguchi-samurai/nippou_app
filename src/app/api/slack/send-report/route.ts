@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       selfSlackUserId: report.user.slackUserId ?? undefined,
       leaderSlackUserId: (report.user as { leaderSlackUserId?: string | null }).leaderSlackUserId ?? undefined,
       channelId: (report.user as { slackChannelId?: string | null }).slackChannelId ?? undefined,
+      comment: (report as { comment?: string | null }).comment ?? undefined,
       entries: report.entries.map((e) => ({
         title: e.title,
         category: e.category,
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
         source: e.source as "calendar" | "manual",
         calendarEventId: e.calendarEventId ?? undefined,
         memo: e.memo ?? undefined,
+        startTime: (e as { startTime?: string | null }).startTime ?? undefined,
+        endTime: (e as { endTime?: string | null }).endTime ?? undefined,
       })),
       goals: weeklyGoals.map((g) => ({
         content: g.content,

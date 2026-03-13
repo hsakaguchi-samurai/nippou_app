@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { date, entries } = body;
+  const { date, entries, comment } = body;
 
   // Upsert: one report per user per date
   const existing = await prisma.dailyReport.findUnique({
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
     const report = await prisma.dailyReport.update({
       where: { id: existing.id },
       data: {
+        comment: comment ?? null,
         entries: {
           create: entries.map(
             (e: {
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
     data: {
       userId: session.user.id,
       date: new Date(date),
+      comment: comment ?? null,
       entries: {
         create: entries.map(
           (e: {
@@ -113,6 +115,8 @@ export async function POST(req: NextRequest) {
             source: string;
             calendarEventId?: string;
             memo?: string;
+            startTime?: string;
+            endTime?: string;
           }) => ({
             title: e.title,
             category: e.category,
@@ -120,6 +124,8 @@ export async function POST(req: NextRequest) {
             source: e.source,
             calendarEventId: e.calendarEventId,
             memo: e.memo,
+            startTime: e.startTime,
+            endTime: e.endTime,
           })
         ),
       },

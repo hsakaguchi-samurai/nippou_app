@@ -11,6 +11,7 @@ import { ReportPreview } from "./ReportPreview";
 import { GoalProgressSection } from "./GoalProgressSection";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Loader2, CheckCircle2 } from "lucide-react";
 import type { ReportEntryData, CalendarEvent } from "@/types";
 import { parseRoles } from "@/types";
@@ -23,6 +24,7 @@ export function ReportForm() {
 
   const [date, setDate] = useState(getTodayISO());
   const [entries, setEntries] = useState<ReportEntryData[]>([]);
+  const [comment, setComment] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
   const [goalProgresses, setGoalProgresses] = useState<{
     goalId: string; content: string; progressCurrent: string; progressTotal: string; percentage: string;
@@ -63,6 +65,7 @@ export function ReportForm() {
       if (report?.id) {
         setReportId(report.id);
         setReportStatus(report.status);
+        setComment(report.comment ?? "");
         setEntries(
           report.entries.map((e: ReportEntryData & { id: string }) => ({
             id: e.id,
@@ -122,14 +125,14 @@ export function ReportForm() {
     }
   };
 
-  const handleSave = useCallback(async (entriesToSave: ReportEntryData[]) => {
+  const handleSave = useCallback(async (entriesToSave: ReportEntryData[], commentToSave: string) => {
     if (entriesToSave.length === 0) return;
     setSaving(true);
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, entries: entriesToSave }),
+        body: JSON.stringify({ date, entries: entriesToSave, comment: commentToSave || null }),
       });
       const report = await res.json();
       setReportId(report.id);
@@ -153,7 +156,7 @@ export function ReportForm() {
       clearTimeout(autoSaveTimer.current);
     }
     autoSaveTimer.current = setTimeout(() => {
-      handleSave(entries);
+      handleSave(entries, comment);
     }, 2000);
 
     return () => {
@@ -161,7 +164,7 @@ export function ReportForm() {
         clearTimeout(autoSaveTimer.current);
       }
     };
-  }, [entries, handleSave]);
+  }, [entries, comment, handleSave]);
 
   // Save on page leave
   useEffect(() => {
@@ -170,7 +173,7 @@ export function ReportForm() {
         navigator.sendBeacon(
           "/api/reports",
           new Blob(
-            [JSON.stringify({ date, entries })],
+            [JSON.stringify({ date, entries, comment: comment || null })],
             { type: "application/json" }
           )
         );
@@ -338,9 +341,24 @@ export function ReportForm() {
 
       <GoalProgressSection date={date} onChange={setGoalProgresses} />
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">所感</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="本日の振り返り・気づきなど..."
+            rows={4}
+          />
+        </CardContent>
+      </Card>
+
       <ReportPreview
         entries={entries}
         goalProgresses={goalProgresses}
+        comment={comment}
         onSend={handleSend}
         sending={sending}
         reportId={reportId}

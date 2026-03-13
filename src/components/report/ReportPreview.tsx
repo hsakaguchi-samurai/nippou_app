@@ -16,6 +16,7 @@ interface GoalProgress {
 interface ReportPreviewProps {
   entries: ReportEntryData[];
   goalProgresses?: GoalProgress[];
+  comment?: string;
   onSend: () => void;
   sending: boolean;
   reportId: string | null;
@@ -37,6 +38,7 @@ function formatTime(iso: string): string {
 export function ReportPreview({
   entries,
   goalProgresses = [],
+  comment = "",
   onSend,
   sending,
   reportId,
@@ -99,6 +101,13 @@ export function ReportPreview({
                   <p key={g.goalId}>・{g.content}: {ratio}{pct}</p>
                 );
               })}
+            </div>
+          )}
+
+          {comment && (
+            <div className="mt-3">
+              <p className="font-bold">所感</p>
+              <p>{comment}</p>
             </div>
           )}
 

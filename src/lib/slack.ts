@@ -11,6 +11,7 @@ interface ReportPayload {
   selfSlackUserId?: string | null;
   leaderSlackUserId?: string | null;
   channelId?: string | null;
+  comment?: string | null;
 }
 
 const FIXED_FOOTER = `★ヨミ表
@@ -91,8 +92,10 @@ export async function sendReportToChannel(payload: ReportPayload) {
     `*今週の目標進捗*`,
     goalLines,
     ``,
+    payload.comment ? `*所感*\n${payload.comment}` : null,
+    payload.comment ? `` : null,
     FIXED_FOOTER,
-  ].filter(Boolean).join("\n");
+  ].filter((v) => v !== null).join("\n");
 
   const result = await slack.chat.postMessage({
     channel: channelId,
