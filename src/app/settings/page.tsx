@@ -142,10 +142,10 @@ export default function SettingsPage() {
               id="leaderSlackUserId"
               value={leaderSlackUserId}
               onChange={(e) => setLeaderSlackUserId(e.target.value)}
-              placeholder="U0123456789"
+              placeholder="U0123456789,U0987654321"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              未設定の場合はメンションされません
+              複数の場合はカンマ区切りで入力。未設定の場合はメンションされません
             </p>
           </div>
           <div>

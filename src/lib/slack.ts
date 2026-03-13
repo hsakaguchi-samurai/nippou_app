@@ -67,9 +67,18 @@ export async function sendReportToChannel(payload: ReportPayload) {
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
 
+  const leaderMentions = payload.leaderSlackUserId
+    ? payload.leaderSlackUserId
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .map((id) => `<@${id}>`)
+        .join(" ")
+    : null;
+
   const mentions = [
     payload.selfSlackUserId ? `<@${payload.selfSlackUserId}>` : null,
-    payload.leaderSlackUserId ? `<@${payload.leaderSlackUserId}>` : null,
+    leaderMentions,
   ].filter(Boolean).join(" ");
 
   const text = [
