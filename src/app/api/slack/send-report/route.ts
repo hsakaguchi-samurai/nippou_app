@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       date: formatDate(report.date),
       selfSlackUserId: report.user.slackUserId ?? undefined,
       leaderSlackUserId: (report.user as { leaderSlackUserId?: string | null }).leaderSlackUserId ?? undefined,
+      channelId: (report.user as { slackChannelId?: string | null }).slackChannelId ?? undefined,
       entries: report.entries.map((e) => ({
         title: e.title,
         category: e.category,

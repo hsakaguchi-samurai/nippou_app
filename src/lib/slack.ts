@@ -10,6 +10,7 @@ interface ReportPayload {
   goals: { content: string; progress: DailyProgressData | null }[];
   selfSlackUserId?: string | null;
   leaderSlackUserId?: string | null;
+  channelId?: string | null;
 }
 
 const FIXED_FOOTER = `★ヨミ表
@@ -18,7 +19,7 @@ https://docs.google.com/spreadsheets/d/1fU9dcaA-dk4LHbzeofxa9Xj6wvFEvqosFTajG8dQ
 https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g5gc/edit?gid=2072944379#gid=2072944379&range=A1`;
 
 export async function sendReportToChannel(payload: ReportPayload) {
-  const channelId = process.env.SLACK_CHANNEL_ID!;
+  const channelId = payload.channelId || process.env.SLACK_CHANNEL_ID!;
 
   const categoryMap = new Map<string, ReportEntryData[]>();
   for (const e of payload.entries) {

@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [slackUserId, setSlackUserId] = useState("");
   const [leaderSlackUserId, setLeaderSlackUserId] = useState("");
+  const [slackChannelId, setSlackChannelId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function SettingsPage() {
         setRoles(parseRoles(data.role));
         setSlackUserId(data.slackUserId ?? "");
         setLeaderSlackUserId(data.leaderSlackUserId ?? "");
+        setSlackChannelId(data.slackChannelId ?? "");
       });
   }, []);
 
@@ -48,6 +50,7 @@ export default function SettingsPage() {
           role: roles.length > 0 ? roles.join(",") : null,
           slackUserId: slackUserId || null,
           leaderSlackUserId: leaderSlackUserId || null,
+          slackChannelId: slackChannelId || null,
         }),
       });
       const updated = await res.json();
@@ -143,6 +146,18 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               未設定の場合はメンションされません
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="slackChannelId">日報送信先チャンネルID</Label>
+            <Input
+              id="slackChannelId"
+              value={slackChannelId}
+              onChange={(e) => setSlackChannelId(e.target.value)}
+              placeholder="C0123456789"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              チャンネル名を右クリック →「チャンネル詳細を表示」で確認できます。未設定の場合はデフォルトチャンネルに送信されます
             </p>
           </div>
         </CardContent>
