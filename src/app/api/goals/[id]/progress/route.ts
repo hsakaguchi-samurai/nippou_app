@@ -13,7 +13,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { date, percentage, note, progressCurrent, progressTotal } = await req.json();
+  const { date, percentage, note, progressCurrent, progressTotal, todayCurrent } = await req.json();
 
   // Verify ownership
   const goal = await prisma.weeklyGoal.findUnique({ where: { id } });
@@ -34,7 +34,7 @@ export async function POST(
         date: new Date(date),
       },
     },
-    update: { percentage: computedPercentage, note, progressCurrent, progressTotal },
+    update: { percentage: computedPercentage, note, progressCurrent, progressTotal, todayCurrent },
     create: {
       weeklyGoalId: id,
       date: new Date(date),
@@ -42,6 +42,7 @@ export async function POST(
       note,
       progressCurrent,
       progressTotal,
+      todayCurrent,
     },
   });
 

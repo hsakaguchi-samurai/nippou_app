@@ -51,7 +51,12 @@ export async function POST(req: NextRequest) {
       selfSlackUserId: report.user.slackUserId ?? undefined,
       leaderSlackUserId: (report.user as { leaderSlackUserId?: string | null }).leaderSlackUserId ?? undefined,
       channelId: (report.user as { slackChannelId?: string | null }).slackChannelId ?? undefined,
-      comment: (report as { comment?: string | null }).comment ?? undefined,
+      comment: report.comment ?? undefined,
+      expectedRevenue: report.expectedRevenue ?? undefined,
+      updateNote: report.updateNote ?? undefined,
+      quantitativeAction: report.quantitativeAction ?? undefined,
+      qualitativeAction: report.qualitativeAction ?? undefined,
+      achievements: report.achievements ?? undefined,
       entries: report.entries.map((e) => ({
         title: e.title,
         category: e.category,
@@ -59,11 +64,13 @@ export async function POST(req: NextRequest) {
         source: e.source as "calendar" | "manual",
         calendarEventId: e.calendarEventId ?? undefined,
         memo: e.memo ?? undefined,
-        startTime: (e as { startTime?: string | null }).startTime ?? undefined,
-        endTime: (e as { endTime?: string | null }).endTime ?? undefined,
+        startTime: e.startTime ?? undefined,
+        endTime: e.endTime ?? undefined,
       })),
       goals: weeklyGoals.map((g) => ({
         content: g.content,
+        unit: g.unit ?? undefined,
+        targetTotal: g.targetTotal ?? undefined,
         progress: g.progress[0]
           ? {
               date: g.progress[0].date.toISOString().split("T")[0],
@@ -71,6 +78,7 @@ export async function POST(req: NextRequest) {
               percentage: g.progress[0].percentage,
               progressCurrent: g.progress[0].progressCurrent ?? undefined,
               progressTotal: g.progress[0].progressTotal ?? undefined,
+              todayCurrent: g.progress[0].todayCurrent ?? undefined,
             }
           : null,
       })),

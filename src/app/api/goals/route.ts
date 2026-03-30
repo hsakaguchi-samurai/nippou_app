@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { weekStartDate, content, targetTotal } = await req.json();
+  const { weekStartDate, content, targetTotal, unit } = await req.json();
 
   try {
     const goal = await prisma.weeklyGoal.create({
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
         weekStartDate: new Date(weekStartDate),
         content,
         ...(targetTotal != null && { targetTotal: Number(targetTotal) }),
+        ...(unit != null && { unit }),
       },
       include: { progress: true },
     });

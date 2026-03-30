@@ -23,6 +23,7 @@ interface WeeklyGoal {
   content: string;
   weekStartDate: string;
   targetTotal: number | null;
+  unit: string | null;
   progress: GoalProgress[];
 }
 
@@ -31,9 +32,11 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<WeeklyGoal[]>([]);
   const [newGoal, setNewGoal] = useState("");
   const [newTargetTotal, setNewTargetTotal] = useState("");
+  const [newUnit, setNewUnit] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editTargetTotal, setEditTargetTotal] = useState("");
+  const [editUnit, setEditUnit] = useState("");
   const isComposing = useRef(false);
   const today = formatDateISO(new Date());
 
@@ -59,6 +62,7 @@ export default function GoalsPage() {
         weekStartDate: weekStartISO,
         content: newGoal,
         targetTotal: newTargetTotal ? Number(newTargetTotal) : null,
+        unit: newUnit || null,
       }),
     });
     if (!res.ok) {
@@ -68,6 +72,7 @@ export default function GoalsPage() {
     }
     setNewGoal("");
     setNewTargetTotal("");
+    setNewUnit("");
     loadGoals();
   };
 
@@ -80,6 +85,7 @@ export default function GoalsPage() {
     setEditingId(goal.id);
     setEditContent(goal.content);
     setEditTargetTotal(goal.targetTotal != null ? String(goal.targetTotal) : "");
+    setEditUnit(goal.unit ?? "");
   };
 
   const saveEdit = async (id: string) => {
@@ -89,6 +95,7 @@ export default function GoalsPage() {
       body: JSON.stringify({
         content: editContent,
         targetTotal: editTargetTotal ? Number(editTargetTotal) : null,
+        unit: editUnit || null,
       }),
     });
     setEditingId(null);
@@ -141,14 +148,19 @@ export default function GoalsPage() {
                   placeholder="目標数"
                   className="w-24"
                 />
-                <span className="text-sm text-muted-foreground whitespace-nowrap">件</span>
+                <Input
+                  value={newUnit}
+                  onChange={(e) => setNewUnit(e.target.value)}
+                  placeholder="単位"
+                  className="w-20"
+                />
               </div>
               <Button onClick={addGoal} disabled={!newGoal.trim()}>
                 <Plus className="h-4 w-4 mr-2" />
                 追加
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">目標数は任意（入力すると日報の進捗欄に自動反映されます）</p>
+            <p className="text-xs text-muted-foreground">目標数・単位は任意（入力すると日報の進捗欄に自動反映されます。例: 単位=UU）</p>
           </div>
 
           <Separator />
@@ -192,7 +204,12 @@ export default function GoalsPage() {
                                 placeholder="目標数"
                                 className="w-24"
                               />
-                              <span className="text-sm text-muted-foreground">件</span>
+                              <Input
+                                value={editUnit}
+                                onChange={(e) => setEditUnit(e.target.value)}
+                                placeholder="単位"
+                                className="w-20"
+                              />
                               <Button size="sm" onClick={() => saveEdit(goal.id)}>
                                 <Check className="h-3 w-3 mr-1" />保存
                               </Button>
@@ -206,7 +223,7 @@ export default function GoalsPage() {
                             <p className="font-medium">
                               {goal.content}
                               {goal.targetTotal != null && (
-                                <span className="ml-2 text-sm font-normal text-muted-foreground">（目標: {goal.targetTotal}件）</span>
+                                <span className="ml-2 text-sm font-normal text-muted-foreground">（目標: {goal.targetTotal}{goal.unit || "件"}）</span>
                               )}
                             </p>
                             <div className="flex items-center gap-2 mt-2">
@@ -215,7 +232,7 @@ export default function GoalsPage() {
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
                               {prevDate
-                                ? `${prevDate} 時点: ${prevCurrent != null && goal.targetTotal != null ? `${prevCurrent}/${goal.targetTotal}件` : `${prevPct}%`}`
+                                ? `${prevDate} 時点: ${prevCurrent != null && goal.targetTotal != null ? `${prevCurrent}/${goal.targetTotal}${goal.unit || "件"}` : `${prevPct}%`}`
                                 : "進捗なし"}
                             </p>
                           </>

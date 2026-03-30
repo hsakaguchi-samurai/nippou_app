@@ -3,15 +3,27 @@ import type { ReportEntryData, DailyProgressData } from "@/types";
 
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
+interface GoalData {
+  content: string;
+  unit?: string | null;
+  targetTotal?: number | null;
+  progress: DailyProgressData | null;
+}
+
 interface ReportPayload {
   userName: string;
   date: string;
   entries: ReportEntryData[];
-  goals: { content: string; progress: DailyProgressData | null }[];
+  goals: GoalData[];
   selfSlackUserId?: string | null;
   leaderSlackUserId?: string | null;
   channelId?: string | null;
   comment?: string | null;
+  expectedRevenue?: string | null;
+  updateNote?: string | null;
+  quantitativeAction?: string | null;
+  qualitativeAction?: string | null;
+  achievements?: string | null;
 }
 
 const FIXED_FOOTER = `★ヨミ表
@@ -22,6 +34,7 @@ https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g
 export async function sendReportToChannel(payload: ReportPayload) {
   const channelId = payload.channelId || process.env.SLACK_CHANNEL_ID!;
 
+  // Group entries by category
   const categoryMap = new Map<string, ReportEntryData[]>();
   for (const e of payload.entries) {
     if (!categoryMap.has(e.category)) categoryMap.set(e.category, []);
@@ -47,20 +60,6 @@ export async function sendReportToChannel(payload: ReportPayload) {
     })
     .join("\n\n");
 
-  const goalLines =
-    payload.goals.length > 0
-      ? payload.goals
-          .map((g) => {
-            const pct = g.progress?.percentage ?? 0;
-            const cur = g.progress?.progressCurrent;
-            const tot = g.progress?.progressTotal;
-            const ratio = cur != null && tot != null ? `${cur}/${tot} ` : "";
-            const note = g.progress?.note ? ` - ${g.progress.note}` : "";
-            return `  ・${g.content}: ${ratio}${pct}%${note}`;
-          })
-          .join("\n")
-      : "  (目標未設定)";
-
   const totalMinutes = payload.entries.reduce(
     (sum, e) => sum + e.durationMinutes,
     0
@@ -68,6 +67,7 @@ export async function sendReportToChannel(payload: ReportPayload) {
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
 
+  // Mentions
   const leaderMentions = payload.leaderSlackUserId
     ? payload.leaderSlackUserId
         .split(",")
@@ -82,18 +82,60 @@ export async function sendReportToChannel(payload: ReportPayload) {
     leaderMentions,
   ].filter(Boolean).join(" ");
 
+  // Weekly commitment lines
+  const weeklyCommitLines = payload.goals.length > 0
+    ? payload.goals.map((g) => {
+        const unit = g.unit || "";
+        const cur = g.progress?.progressCurrent ?? "—";
+        const tot = g.targetTotal ?? g.progress?.progressTotal ?? "—";
+        return `　●${g.content}：${cur}${unit}/${tot}${unit}`;
+      }).join("\n")
+    : "　(目標未設定)";
+
+  // Daily commitment lines (weekly target / 5)
+  const dailyCommitLines = payload.goals.length > 0
+    ? payload.goals.map((g) => {
+        const unit = g.unit || "";
+        const todayCur = g.progress?.todayCurrent ?? "—";
+        const target = g.targetTotal ?? 0;
+        const dailyTarget = target > 0
+          ? (target / 5).toFixed(1).replace(/\.0$/, "")
+          : "—";
+        return `　●${g.content}：${todayCur}${unit}/${dailyTarget}${unit}`;
+      }).join("\n")
+    : "　(目標未設定)";
+
+  // Achievement bullets
+  const achievementLines = payload.achievements
+    ? payload.achievements.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => `　●${l}`).join("\n")
+    : "　●\n　●\n　●";
+
   const text = [
     mentions,
-    `*日報 - ${payload.userName} (${payload.date})*`,
-    `━━━━━━━━━━━━━`,
+    `お疲れ様です。`,
+    `本日の日報です。`,
+    payload.updateNote || null,
+    ``,
     `*業務内容* (合計: ${hours}時間${mins}分)`,
+    ``,
     entryLines,
     ``,
-    `*今週の目標進捗*`,
-    goalLines,
+    payload.expectedRevenue ? `*■期待値：* ${payload.expectedRevenue}万円` : null,
     ``,
-    payload.comment ? `*所感*\n${payload.comment}` : null,
-    payload.comment ? `` : null,
+    `*■今週のコミットメントの進捗（実績/目標）*`,
+    weeklyCommitLines,
+    ``,
+    `*■今日のコミットメントの進捗（実績/目標）*`,
+    dailyCommitLines,
+    ``,
+    `*■コミット目標に対してどんな行動、行動量を取ったのか*`,
+    `　●定量面：${payload.quantitativeAction || ""}`,
+    ``,
+    `　●定性面：${payload.qualitativeAction || ""}`,
+    ``,
+    `*■達成：なんで達成できたか、気付き*　`,
+    achievementLines,
+    ``,
     FIXED_FOOTER,
   ].filter((v) => v !== null).join("\n");
 

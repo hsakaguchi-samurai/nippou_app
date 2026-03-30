@@ -13,7 +13,7 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const { content, targetTotal } = await req.json();
+  const { content, targetTotal, unit } = await req.json();
 
   const goal = await prisma.weeklyGoal.findUnique({ where: { id } });
   if (!goal || goal.userId !== session.user.id) {
@@ -25,6 +25,7 @@ export async function PATCH(
     data: {
       ...(content !== undefined && { content }),
       ...(targetTotal !== undefined && { targetTotal: targetTotal != null ? Number(targetTotal) : null }),
+      ...(unit !== undefined && { unit: unit || null }),
     },
     include: { progress: true },
   });

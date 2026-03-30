@@ -4,19 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
 import type { ReportEntryData } from "@/types";
-
-interface GoalProgress {
-  goalId: string;
-  content: string;
-  progressCurrent: string;
-  progressTotal: string;
-  percentage: string;
-}
+import type { GoalProgress } from "./GoalProgressSection";
 
 interface ReportPreviewProps {
   entries: ReportEntryData[];
   goalProgresses?: GoalProgress[];
-  comment?: string;
+  expectedRevenue?: string;
+  updateNote?: string;
+  quantitativeAction?: string;
+  qualitativeAction?: string;
+  achievements?: string;
   onSend: () => void;
   sending: boolean;
   reportId: string | null;
@@ -38,7 +35,11 @@ function formatTime(iso: string): string {
 export function ReportPreview({
   entries,
   goalProgresses = [],
-  comment = "",
+  expectedRevenue = "",
+  updateNote = "",
+  quantitativeAction = "",
+  qualitativeAction = "",
+  achievements = "",
   onSend,
   sending,
   reportId,
@@ -57,6 +58,11 @@ export function ReportPreview({
     categoryMap.get(cat)!.push(e);
   }
 
+  const achievementLines = achievements
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
   return (
     <Card>
       <CardHeader>
@@ -65,8 +71,10 @@ export function ReportPreview({
       <CardContent>
         <div className="rounded-md bg-muted p-4 font-mono text-sm whitespace-pre-wrap space-y-1">
           <p className="text-muted-foreground text-xs">@自分 @リーダー</p>
-          <p className="font-bold">日報</p>
-          <p className="text-muted-foreground">━━━━━━━━━━━━━</p>
+          <p>お疲れ様です。</p>
+          <p>本日の日報です。</p>
+          {updateNote && <p>{updateNote}</p>}
+          <p></p>
           <p className="font-bold">業務内容 (合計: {hours}時間{mins}分)</p>
 
           {Array.from(categoryMap.entries()).map(([category, catEntries], ci) => (
@@ -89,27 +97,61 @@ export function ReportPreview({
             </div>
           ))}
 
+          {expectedRevenue && (
+            <div className="mt-3">
+              <p className="font-bold">■期待値： {expectedRevenue}万円</p>
+            </div>
+          )}
+
           {goalProgresses.length > 0 && (
             <div className="mt-3">
-              <p className="font-bold">今週の目標進捗</p>
+              <p className="font-bold">■今週のコミットメントの進捗（実績/目標）</p>
               {goalProgresses.map((g) => {
-                const hasRatio = g.progressCurrent !== "" && g.progressTotal !== "";
-                const hasPct = g.percentage !== "";
-                const ratio = hasRatio ? `${g.progressCurrent}/${g.progressTotal} ` : "";
-                const pct = hasPct ? `${g.percentage}%` : "未入力";
+                const unit = g.unit || "";
+                const cur = g.progressCurrent || "—";
+                const tot = g.progressTotal || "—";
                 return (
-                  <p key={g.goalId}>・{g.content}: {ratio}{pct}</p>
+                  <p key={g.goalId}>　●{g.content}：{cur}{unit}/{tot}{unit}</p>
                 );
               })}
             </div>
           )}
 
-          {comment && (
+          {goalProgresses.length > 0 && (
             <div className="mt-3">
-              <p className="font-bold">所感</p>
-              <p>{comment}</p>
+              <p className="font-bold">■今日のコミットメントの進捗（実績/目標）</p>
+              {goalProgresses.map((g) => {
+                const unit = g.unit || "";
+                const todayCur = g.todayCurrent || "—";
+                const dailyTgt = g.dailyTarget || "—";
+                return (
+                  <p key={g.goalId}>　●{g.content}：{todayCur}{unit}/{dailyTgt}{unit}</p>
+                );
+              })}
             </div>
           )}
+
+          <div className="mt-3">
+            <p className="font-bold">■コミット目標に対してどんな行動、行動量を取ったのか</p>
+            <p>　●定量面：{quantitativeAction || ""}</p>
+            <p></p>
+            <p>　●定性面：{qualitativeAction || ""}</p>
+          </div>
+
+          <div className="mt-3">
+            <p className="font-bold">■達成：なんで達成できたか、気付き　</p>
+            {achievementLines.length > 0 ? (
+              achievementLines.map((line, i) => (
+                <p key={i}>　●{line}</p>
+              ))
+            ) : (
+              <>
+                <p>　●</p>
+                <p>　●</p>
+                <p>　●</p>
+              </>
+            )}
+          </div>
 
           <div className="mt-3 text-muted-foreground text-xs">
             <p>{FIXED_FOOTER}</p>

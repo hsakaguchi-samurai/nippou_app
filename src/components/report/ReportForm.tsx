@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ReportEntryRow } from "./ReportEntryRow";
 import { ManualEventForm } from "./ManualEventForm";
 import { ReportPreview } from "./ReportPreview";
-import { GoalProgressSection } from "./GoalProgressSection";
+import { GoalProgressSection, type GoalProgress } from "./GoalProgressSection";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,10 +25,13 @@ export function ReportForm() {
   const [date, setDate] = useState(getTodayISO());
   const [entries, setEntries] = useState<ReportEntryData[]>([]);
   const [comment, setComment] = useState("");
+  const [expectedRevenue, setExpectedRevenue] = useState("");
+  const [updateNote, setUpdateNote] = useState("");
+  const [quantitativeAction, setQuantitativeAction] = useState("");
+  const [qualitativeAction, setQualitativeAction] = useState("");
+  const [achievements, setAchievements] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
-  const [goalProgresses, setGoalProgresses] = useState<{
-    goalId: string; content: string; progressCurrent: string; progressTotal: string; percentage: string;
-  }[]>([]);
+  const [goalProgresses, setGoalProgresses] = useState<GoalProgress[]>([]);
   const [reportStatus, setReportStatus] = useState<string>("draft");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -66,6 +69,11 @@ export function ReportForm() {
         setReportId(report.id);
         setReportStatus(report.status);
         setComment(report.comment ?? "");
+        setExpectedRevenue(report.expectedRevenue ?? "");
+        setUpdateNote(report.updateNote ?? "");
+        setQuantitativeAction(report.quantitativeAction ?? "");
+        setQualitativeAction(report.qualitativeAction ?? "");
+        setAchievements(report.achievements ?? "");
         setEntries(
           report.entries.map((e: ReportEntryData & { id: string }) => ({
             id: e.id,
@@ -125,14 +133,29 @@ export function ReportForm() {
     }
   };
 
+  const extraFieldsRef = useRef({ expectedRevenue: "", updateNote: "", quantitativeAction: "", qualitativeAction: "", achievements: "" });
+  useEffect(() => {
+    extraFieldsRef.current = { expectedRevenue, updateNote, quantitativeAction, qualitativeAction, achievements };
+  }, [expectedRevenue, updateNote, quantitativeAction, qualitativeAction, achievements]);
+
   const handleSave = useCallback(async (entriesToSave: ReportEntryData[], commentToSave: string) => {
     if (entriesToSave.length === 0) return;
     setSaving(true);
+    const extra = extraFieldsRef.current;
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, entries: entriesToSave, comment: commentToSave || null }),
+        body: JSON.stringify({
+          date,
+          entries: entriesToSave,
+          comment: commentToSave || null,
+          expectedRevenue: extra.expectedRevenue || null,
+          updateNote: extra.updateNote || null,
+          quantitativeAction: extra.quantitativeAction || null,
+          qualitativeAction: extra.qualitativeAction || null,
+          achievements: extra.achievements || null,
+        }),
       });
       const report = await res.json();
       setReportId(report.id);
@@ -164,7 +187,7 @@ export function ReportForm() {
         clearTimeout(autoSaveTimer.current);
       }
     };
-  }, [entries, comment, handleSave]);
+  }, [entries, comment, expectedRevenue, updateNote, quantitativeAction, qualitativeAction, achievements, handleSave]);
 
   // Save on page leave
   useEffect(() => {
@@ -173,7 +196,14 @@ export function ReportForm() {
         navigator.sendBeacon(
           "/api/reports",
           new Blob(
-            [JSON.stringify({ date, entries, comment: comment || null })],
+            [JSON.stringify({
+              date, entries, comment: comment || null,
+              expectedRevenue: expectedRevenue || null,
+              updateNote: updateNote || null,
+              quantitativeAction: quantitativeAction || null,
+              qualitativeAction: qualitativeAction || null,
+              achievements: achievements || null,
+            })],
             { type: "application/json" }
           )
         );
@@ -203,6 +233,7 @@ export function ReportForm() {
                 progressCurrent: g.progressCurrent !== "" ? Number(g.progressCurrent) : null,
                 progressTotal: g.progressTotal !== "" ? Number(g.progressTotal) : null,
                 percentage: g.percentage !== "" ? Number(g.percentage) : 0,
+                todayCurrent: g.todayCurrent !== "" ? Number(g.todayCurrent) : null,
               }),
             })
           )
@@ -343,22 +374,65 @@ export function ReportForm() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">所感</CardTitle>
+          <CardTitle className="text-base">日報詳細</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="本日の振り返り・気づきなど..."
-            rows={4}
-          />
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <Label>更新事項</Label>
+            <Input
+              value={updateNote}
+              onChange={(e) => setUpdateNote(e.target.value)}
+              placeholder="porters、ヨミ表、更新済みとなります"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>期待値（万円）</Label>
+            <Input
+              value={expectedRevenue}
+              onChange={(e) => setExpectedRevenue(e.target.value)}
+              placeholder="例: 500"
+            />
+          </div>
+          <Separator />
+          <div className="space-y-1">
+            <Label>コミット目標に対する行動（定量面）</Label>
+            <Textarea
+              value={quantitativeAction}
+              onChange={(e) => setQuantitativeAction(e.target.value)}
+              placeholder="例: スカウト50件送付、面談3件実施..."
+              rows={3}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>コミット目標に対する行動（定性面）</Label>
+            <Textarea
+              value={qualitativeAction}
+              onChange={(e) => setQualitativeAction(e.target.value)}
+              placeholder="例: ヒアリング精度を意識した面談..."
+              rows={3}
+            />
+          </div>
+          <Separator />
+          <div className="space-y-1">
+            <Label>達成：なんで達成できたか、気付き</Label>
+            <Textarea
+              value={achievements}
+              onChange={(e) => setAchievements(e.target.value)}
+              placeholder="箇条書きで記載（改行で区切り）"
+              rows={4}
+            />
+          </div>
         </CardContent>
       </Card>
 
       <ReportPreview
         entries={entries}
         goalProgresses={goalProgresses}
-        comment={comment}
+        expectedRevenue={expectedRevenue}
+        updateNote={updateNote}
+        quantitativeAction={quantitativeAction}
+        qualitativeAction={qualitativeAction}
+        achievements={achievements}
         onSend={handleSend}
         sending={sending}
         reportId={reportId}
