@@ -26,7 +26,10 @@ export function ReportForm() {
   const [entries, setEntries] = useState<ReportEntryData[]>([]);
   const [comment, setComment] = useState("");
   const [expectedRevenue, setExpectedRevenue] = useState("");
-  const [updateNote, setUpdateNote] = useState("");
+  const [updateChecks, setUpdateChecks] = useState<Record<string, boolean>>({
+    porters: false,
+    ヨミ表: false,
+  });
   const [quantitativeAction, setQuantitativeAction] = useState("");
   const [qualitativeAction, setQualitativeAction] = useState("");
   const [achievements, setAchievements] = useState("");
@@ -70,7 +73,14 @@ export function ReportForm() {
         setReportStatus(report.status);
         setComment(report.comment ?? "");
         setExpectedRevenue(report.expectedRevenue ?? "");
-        setUpdateNote(report.updateNote ?? "");
+        // Restore checkbox state from saved updateNote
+        if (report.updateNote) {
+          const note = report.updateNote as string;
+          setUpdateChecks({
+            porters: note.includes("porters"),
+            ヨミ表: note.includes("ヨミ表"),
+          });
+        }
         setQuantitativeAction(report.quantitativeAction ?? "");
         setQualitativeAction(report.qualitativeAction ?? "");
         setAchievements(report.achievements ?? "");
@@ -132,6 +142,12 @@ export function ReportForm() {
       setLoading(false);
     }
   };
+
+  const UPDATE_ITEMS = ["porters", "ヨミ表"] as const;
+  const checkedItems = UPDATE_ITEMS.filter((item) => updateChecks[item]);
+  const updateNote = checkedItems.length > 0
+    ? `${checkedItems.join("、")}、更新済みとなります。`
+    : "";
 
   const extraFieldsRef = useRef({ expectedRevenue: "", updateNote: "", quantitativeAction: "", qualitativeAction: "", achievements: "" });
   useEffect(() => {
@@ -377,13 +393,26 @@ export function ReportForm() {
           <CardTitle className="text-base">日報詳細</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label>更新事項</Label>
-            <Input
-              value={updateNote}
-              onChange={(e) => setUpdateNote(e.target.value)}
-              placeholder="porters、ヨミ表、更新済みとなります"
-            />
+            <div className="flex gap-4">
+              {UPDATE_ITEMS.map((item) => (
+                <label key={item} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={updateChecks[item] ?? false}
+                    onChange={(e) =>
+                      setUpdateChecks((prev) => ({ ...prev, [item]: e.target.checked }))
+                    }
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <span className="text-sm">{item}</span>
+                </label>
+              ))}
+            </div>
+            {updateNote && (
+              <p className="text-xs text-muted-foreground">{updateNote}</p>
+            )}
           </div>
           <div className="space-y-1">
             <Label>期待値（万円）</Label>
