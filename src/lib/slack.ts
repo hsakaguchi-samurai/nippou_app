@@ -26,11 +26,6 @@ interface ReportPayload {
   achievements?: string | null;
 }
 
-const FIXED_FOOTER = `★ヨミ表
-https://docs.google.com/spreadsheets/d/1fU9dcaA-dk4LHbzeofxa9Xj6wvFEvqosFTajG8dQFak/edit?gid=408537210#gid=408537210
-★週次KPI
-https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g5gc/edit?gid=2072944379#gid=2072944379&range=A1`;
-
 export async function sendReportToChannel(payload: ReportPayload) {
   const channelId = payload.channelId || process.env.SLACK_CHANNEL_ID!;
 
@@ -135,8 +130,6 @@ export async function sendReportToChannel(payload: ReportPayload) {
     ``,
     `*■達成：なんで達成できたか、気付き*　`,
     achievementLines,
-    ``,
-    FIXED_FOOTER,
   ].filter((v) => v !== null).join("\n");
 
   const result = await slack.chat.postMessage({

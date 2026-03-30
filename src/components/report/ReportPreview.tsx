@@ -19,11 +19,6 @@ interface ReportPreviewProps {
   reportId: string | null;
 }
 
-const FIXED_FOOTER = `★ヨミ表
-https://docs.google.com/spreadsheets/d/1fU9dcaA-dk4LHbzeofxa9Xj6wvFEvqosFTajG8dQFak/edit?gid=408537210#gid=408537210
-★週次KPI
-https://docs.google.com/spreadsheets/d/1RNHurBJNA4zEwqjjujLA0hfRLzIQca4koiX5ui6g5gc/edit?gid=2072944379#gid=2072944379&range=A1`;
-
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("ja-JP", {
     hour: "2-digit",
@@ -153,9 +148,6 @@ export function ReportPreview({
             )}
           </div>
 
-          <div className="mt-3 text-muted-foreground text-xs">
-            <p>{FIXED_FOOTER}</p>
-          </div>
         </div>
       </CardContent>
       <CardFooter className="justify-end">
