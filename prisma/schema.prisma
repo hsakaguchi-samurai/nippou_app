@@ -44,6 +44,7 @@ model User {
   slackUserId       String?
   leaderSlackUserId String?
   slackChannelId    String?
+  reportFormat      String    @default("detailed") // detailed, simple
 
   accounts      Account[]
   sessions      Session[]

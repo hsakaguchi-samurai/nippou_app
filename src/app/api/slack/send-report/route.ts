@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       selfSlackUserId: report.user.slackUserId ?? undefined,
       leaderSlackUserId: (report.user as { leaderSlackUserId?: string | null }).leaderSlackUserId ?? undefined,
       channelId: (report.user as { slackChannelId?: string | null }).slackChannelId ?? undefined,
+      reportFormat: (report.user as { reportFormat?: string | null }).reportFormat ?? "detailed",
       comment: report.comment ?? undefined,
       expectedRevenue: report.expectedRevenue ?? undefined,
       updateNote: report.updateNote ?? undefined,

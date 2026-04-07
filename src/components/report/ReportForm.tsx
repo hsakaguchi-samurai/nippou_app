@@ -19,8 +19,11 @@ import { getTodayISO } from "@/lib/utils/date";
 
 export function ReportForm() {
   const { data: session } = useSession();
-  const roleStr = (session?.user as Record<string, unknown>)?.role as string | null;
+  const userExt = session?.user as Record<string, unknown> | undefined;
+  const roleStr = userExt?.role as string | null;
   const roles = parseRoles(roleStr);
+  const reportFormat = (userExt?.reportFormat as string) ?? "detailed";
+  const isDetailed = reportFormat === "detailed";
 
   const [date, setDate] = useState(getTodayISO());
   const [entries, setEntries] = useState<ReportEntryData[]>([]);
@@ -388,75 +391,93 @@ export function ReportForm() {
 
       <GoalProgressSection date={date} onChange={setGoalProgresses} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">日報詳細</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>更新事項</Label>
-            <div className="flex gap-4">
-              {UPDATE_ITEMS.map((item) => (
-                <label key={item} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={updateChecks[item] ?? false}
-                    onChange={(e) =>
-                      setUpdateChecks((prev) => ({ ...prev, [item]: e.target.checked }))
-                    }
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                  <span className="text-sm">{item}</span>
-                </label>
-              ))}
+      {isDetailed ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">日報詳細</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>更新事項</Label>
+              <div className="flex gap-4">
+                {UPDATE_ITEMS.map((item) => (
+                  <label key={item} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={updateChecks[item] ?? false}
+                      onChange={(e) =>
+                        setUpdateChecks((prev) => ({ ...prev, [item]: e.target.checked }))
+                      }
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm">{item}</span>
+                  </label>
+                ))}
+              </div>
+              {updateNote && (
+                <p className="text-xs text-muted-foreground">{updateNote}</p>
+              )}
             </div>
-            {updateNote && (
-              <p className="text-xs text-muted-foreground">{updateNote}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label>期待値（万円）</Label>
-            <Input
-              value={expectedRevenue}
-              onChange={(e) => setExpectedRevenue(e.target.value)}
-              placeholder="例: 500"
-            />
-          </div>
-          <Separator />
-          <div className="space-y-1">
-            <Label>コミット目標に対する行動（定量面）</Label>
+            <div className="space-y-1">
+              <Label>期待値（万円）</Label>
+              <Input
+                value={expectedRevenue}
+                onChange={(e) => setExpectedRevenue(e.target.value)}
+                placeholder="例: 500"
+              />
+            </div>
+            <Separator />
+            <div className="space-y-1">
+              <Label>コミット目標に対する行動（定量面）</Label>
+              <Textarea
+                value={quantitativeAction}
+                onChange={(e) => setQuantitativeAction(e.target.value)}
+                placeholder="例: スカウト50件送付、面談3件実施..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>コミット目標に対する行動（定性面）</Label>
+              <Textarea
+                value={qualitativeAction}
+                onChange={(e) => setQualitativeAction(e.target.value)}
+                placeholder="例: ヒアリング精度を意識した面談..."
+                rows={3}
+              />
+            </div>
+            <Separator />
+            <div className="space-y-1">
+              <Label>達成：なんで達成できたか、気付き</Label>
+              <Textarea
+                value={achievements}
+                onChange={(e) => setAchievements(e.target.value)}
+                placeholder="箇条書きで記載（改行で区切り）"
+                rows={4}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">所感</CardTitle>
+          </CardHeader>
+          <CardContent>
             <Textarea
-              value={quantitativeAction}
-              onChange={(e) => setQuantitativeAction(e.target.value)}
-              placeholder="例: スカウト50件送付、面談3件実施..."
-              rows={3}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>コミット目標に対する行動（定性面）</Label>
-            <Textarea
-              value={qualitativeAction}
-              onChange={(e) => setQualitativeAction(e.target.value)}
-              placeholder="例: ヒアリング精度を意識した面談..."
-              rows={3}
-            />
-          </div>
-          <Separator />
-          <div className="space-y-1">
-            <Label>達成：なんで達成できたか、気付き</Label>
-            <Textarea
-              value={achievements}
-              onChange={(e) => setAchievements(e.target.value)}
-              placeholder="箇条書きで記載（改行で区切り）"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="本日の振り返り・気づきなど..."
               rows={4}
             />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <ReportPreview
         entries={entries}
         goalProgresses={goalProgresses}
+        reportFormat={reportFormat}
+        comment={comment}
         expectedRevenue={expectedRevenue}
         updateNote={updateNote}
         quantitativeAction={quantitativeAction}

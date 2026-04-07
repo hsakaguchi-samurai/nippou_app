@@ -18,6 +18,7 @@ interface ReportPayload {
   selfSlackUserId?: string | null;
   leaderSlackUserId?: string | null;
   channelId?: string | null;
+  reportFormat?: string | null;
   comment?: string | null;
   expectedRevenue?: string | null;
   updateNote?: string | null;
@@ -26,7 +27,7 @@ interface ReportPayload {
   achievements?: string | null;
 }
 
-export async function sendReportToChannel(payload: ReportPayload) {
+function buildCommon(payload: ReportPayload) {
   const channelId = payload.channelId || process.env.SLACK_CHANNEL_ID!;
 
   // Group entries by category
@@ -55,14 +56,10 @@ export async function sendReportToChannel(payload: ReportPayload) {
     })
     .join("\n\n");
 
-  const totalMinutes = payload.entries.reduce(
-    (sum, e) => sum + e.durationMinutes,
-    0
-  );
+  const totalMinutes = payload.entries.reduce((sum, e) => sum + e.durationMinutes, 0);
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
 
-  // Mentions
   const leaderMentions = payload.leaderSlackUserId
     ? payload.leaderSlackUserId
         .split(",")
@@ -77,7 +74,12 @@ export async function sendReportToChannel(payload: ReportPayload) {
     leaderMentions,
   ].filter(Boolean).join(" ");
 
-  // Weekly commitment lines
+  return { channelId, entryLines, hours, mins, mentions };
+}
+
+function buildDetailedText(payload: ReportPayload, common: ReturnType<typeof buildCommon>) {
+  const { entryLines, hours, mins, mentions } = common;
+
   const weeklyCommitLines = payload.goals.length > 0
     ? payload.goals.map((g) => {
         const unit = g.unit || "";
@@ -87,7 +89,6 @@ export async function sendReportToChannel(payload: ReportPayload) {
       }).join("\n")
     : "　(目標未設定)";
 
-  // Daily commitment lines (weekly target / 5)
   const dailyCommitLines = payload.goals.length > 0
     ? payload.goals.map((g) => {
         const unit = g.unit || "";
@@ -100,12 +101,11 @@ export async function sendReportToChannel(payload: ReportPayload) {
       }).join("\n")
     : "　(目標未設定)";
 
-  // Achievement bullets
   const achievementLines = payload.achievements
     ? payload.achievements.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => `　●${l}`).join("\n")
     : "　●\n　●\n　●";
 
-  const text = [
+  return [
     mentions,
     `お疲れ様です。`,
     `本日の日報です。`,
@@ -131,9 +131,49 @@ export async function sendReportToChannel(payload: ReportPayload) {
     `*■達成：なんで達成できたか、気付き*　`,
     achievementLines,
   ].filter((v) => v !== null).join("\n");
+}
+
+function buildSimpleText(payload: ReportPayload, common: ReturnType<typeof buildCommon>) {
+  const { entryLines, hours, mins, mentions } = common;
+
+  const goalLines =
+    payload.goals.length > 0
+      ? payload.goals
+          .map((g) => {
+            const cur = g.progress?.progressCurrent;
+            const tot = g.targetTotal ?? g.progress?.progressTotal;
+            const ratio = cur != null && tot != null ? `${cur}/${tot} ` : "";
+            const pct = g.progress?.percentage ?? 0;
+            return `  ・${g.content}: ${ratio}${pct}%`;
+          })
+          .join("\n")
+      : "  (目標未設定)";
+
+  return [
+    mentions,
+    `お疲れ様です。`,
+    `本日の日報です。`,
+    ``,
+    `*業務内容* (合計: ${hours}時間${mins}分)`,
+    ``,
+    entryLines,
+    ``,
+    `*今週の目標進捗*`,
+    goalLines,
+    ``,
+    payload.comment ? `*所感*\n${payload.comment}` : null,
+  ].filter((v) => v !== null).join("\n");
+}
+
+export async function sendReportToChannel(payload: ReportPayload) {
+  const common = buildCommon(payload);
+  const isDetailed = (payload.reportFormat ?? "detailed") === "detailed";
+  const text = isDetailed
+    ? buildDetailedText(payload, common)
+    : buildSimpleText(payload, common);
 
   const result = await slack.chat.postMessage({
-    channel: channelId,
+    channel: common.channelId,
     text,
     mrkdwn: true,
   });

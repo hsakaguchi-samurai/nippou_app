@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ALL_ROLES } from "@/lib/constants/categories";
 import { Loader2, Save } from "lucide-react";
-import type { Role, UserProfile } from "@/types";
+import type { Role, UserProfile, ReportFormat } from "@/types";
 import { parseRoles } from "@/types";
 import Image from "next/image";
 
@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [slackUserId, setSlackUserId] = useState("");
   const [leaderSlackUserId, setLeaderSlackUserId] = useState("");
   const [slackChannelId, setSlackChannelId] = useState("");
+  const [reportFormat, setReportFormat] = useState<ReportFormat>("detailed");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function SettingsPage() {
         setSlackUserId(data.slackUserId ?? "");
         setLeaderSlackUserId(data.leaderSlackUserId ?? "");
         setSlackChannelId(data.slackChannelId ?? "");
+        setReportFormat(data.reportFormat ?? "detailed");
       });
   }, []);
 
@@ -51,6 +53,7 @@ export default function SettingsPage() {
           slackUserId: slackUserId || null,
           leaderSlackUserId: leaderSlackUserId || null,
           slackChannelId: slackChannelId || null,
+          reportFormat,
         }),
       });
       const updated = await res.json();
@@ -159,6 +162,44 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground mt-1">
               チャンネル名を右クリック →「チャンネル詳細を表示」で確認できます。未設定の場合はデフォルトチャンネルに送信されます
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Report Format */}
+      <Card>
+        <CardHeader>
+          <CardTitle>日報フォーマット</CardTitle>
+          <CardDescription>
+            日報の出力形式を選択してください
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3">
+            <Button
+              variant={reportFormat === "detailed" ? "default" : "outline"}
+              onClick={() => setReportFormat("detailed")}
+              className="h-auto py-3 justify-start"
+            >
+              <div className="text-left">
+                <p className="font-medium">詳細フォーマット</p>
+                <p className="text-xs opacity-70 mt-0.5">
+                  期待値・コミットメント進捗・行動・達成/気付き
+                </p>
+              </div>
+            </Button>
+            <Button
+              variant={reportFormat === "simple" ? "default" : "outline"}
+              onClick={() => setReportFormat("simple")}
+              className="h-auto py-3 justify-start"
+            >
+              <div className="text-left">
+                <p className="font-medium">シンプルフォーマット</p>
+                <p className="text-xs opacity-70 mt-0.5">
+                  業務内容＋所感のみ
+                </p>
+              </div>
+            </Button>
           </div>
         </CardContent>
       </Card>

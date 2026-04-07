@@ -33,11 +33,13 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, slackUserId: true },
+            select: { role: true, slackUserId: true, reportFormat: true },
           });
           (session.user as Record<string, unknown>).role = dbUser?.role ?? null;
           (session.user as Record<string, unknown>).slackUserId =
             dbUser?.slackUserId ?? null;
+          (session.user as Record<string, unknown>).reportFormat =
+            dbUser?.reportFormat ?? "detailed";
         } catch {
           (session.user as Record<string, unknown>).role = null;
           (session.user as Record<string, unknown>).slackUserId = null;

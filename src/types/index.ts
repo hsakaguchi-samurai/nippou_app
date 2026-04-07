@@ -48,6 +48,8 @@ export interface DailyProgressData {
   todayCurrent?: number | null;
 }
 
+export type ReportFormat = "detailed" | "simple";
+
 export interface UserProfile {
   id: string;
   name: string | null;
@@ -57,6 +59,7 @@ export interface UserProfile {
   slackUserId: string | null;
   leaderSlackUserId: string | null;
   slackChannelId: string | null;
+  reportFormat: ReportFormat;
 }
 
 export function parseRoles(role: string | null): Role[] {

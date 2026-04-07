@@ -9,6 +9,8 @@ import type { GoalProgress } from "./GoalProgressSection";
 interface ReportPreviewProps {
   entries: ReportEntryData[];
   goalProgresses?: GoalProgress[];
+  reportFormat?: string;
+  comment?: string;
   expectedRevenue?: string;
   updateNote?: string;
   quantitativeAction?: string;
@@ -30,6 +32,8 @@ function formatTime(iso: string): string {
 export function ReportPreview({
   entries,
   goalProgresses = [],
+  reportFormat = "detailed",
+  comment = "",
   expectedRevenue = "",
   updateNote = "",
   quantitativeAction = "",
@@ -53,6 +57,8 @@ export function ReportPreview({
     categoryMap.get(cat)!.push(e);
   }
 
+  const isDetailed = reportFormat === "detailed";
+
   const achievementLines = achievements
     .split("\n")
     .map((l) => l.trim())
@@ -68,7 +74,7 @@ export function ReportPreview({
           <p className="text-muted-foreground text-xs">@自分 @リーダー</p>
           <p>お疲れ様です。</p>
           <p>本日の日報です。</p>
-          {updateNote && <p>{updateNote}</p>}
+          {isDetailed && updateNote && <p>{updateNote}</p>}
           <p></p>
           <p className="font-bold">業務内容 (合計: {hours}時間{mins}分)</p>
 
@@ -92,62 +98,88 @@ export function ReportPreview({
             </div>
           ))}
 
-          {expectedRevenue && (
-            <div className="mt-3">
-              <p className="font-bold">■期待値： {expectedRevenue}万円</p>
-            </div>
+          {isDetailed ? (
+            <>
+              {expectedRevenue && (
+                <div className="mt-3">
+                  <p className="font-bold">■期待値： {expectedRevenue}万円</p>
+                </div>
+              )}
+
+              {goalProgresses.length > 0 && (
+                <div className="mt-3">
+                  <p className="font-bold">■今週のコミットメントの進捗（実績/目標）</p>
+                  {goalProgresses.map((g) => {
+                    const unit = g.unit || "";
+                    const cur = g.progressCurrent || "—";
+                    const tot = g.progressTotal || "—";
+                    return (
+                      <p key={g.goalId}>　●{g.content}：{cur}{unit}/{tot}{unit}</p>
+                    );
+                  })}
+                </div>
+              )}
+
+              {goalProgresses.length > 0 && (
+                <div className="mt-3">
+                  <p className="font-bold">■今日のコミットメントの進捗（実績/目標）</p>
+                  {goalProgresses.map((g) => {
+                    const unit = g.unit || "";
+                    const todayCur = g.todayCurrent || "—";
+                    const dailyTgt = g.dailyTarget || "—";
+                    return (
+                      <p key={g.goalId}>　●{g.content}：{todayCur}{unit}/{dailyTgt}{unit}</p>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-3">
+                <p className="font-bold">■コミット目標に対してどんな行動、行動量を取ったのか</p>
+                <p>　●定量面：{quantitativeAction || ""}</p>
+                <p></p>
+                <p>　●定性面：{qualitativeAction || ""}</p>
+              </div>
+
+              <div className="mt-3">
+                <p className="font-bold">■達成：なんで達成できたか、気付き　</p>
+                {achievementLines.length > 0 ? (
+                  achievementLines.map((line, i) => (
+                    <p key={i}>　●{line}</p>
+                  ))
+                ) : (
+                  <>
+                    <p>　●</p>
+                    <p>　●</p>
+                    <p>　●</p>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {goalProgresses.length > 0 && (
+                <div className="mt-3">
+                  <p className="font-bold">今週の目標進捗</p>
+                  {goalProgresses.map((g) => {
+                    const hasRatio = g.progressCurrent !== "" && g.progressTotal !== "";
+                    const ratio = hasRatio ? `${g.progressCurrent}/${g.progressTotal} ` : "";
+                    const pct = g.percentage !== "" ? `${g.percentage}%` : "未入力";
+                    return (
+                      <p key={g.goalId}>・{g.content}: {ratio}{pct}</p>
+                    );
+                  })}
+                </div>
+              )}
+
+              {comment && (
+                <div className="mt-3">
+                  <p className="font-bold">所感</p>
+                  <p>{comment}</p>
+                </div>
+              )}
+            </>
           )}
-
-          {goalProgresses.length > 0 && (
-            <div className="mt-3">
-              <p className="font-bold">■今週のコミットメントの進捗（実績/目標）</p>
-              {goalProgresses.map((g) => {
-                const unit = g.unit || "";
-                const cur = g.progressCurrent || "—";
-                const tot = g.progressTotal || "—";
-                return (
-                  <p key={g.goalId}>　●{g.content}：{cur}{unit}/{tot}{unit}</p>
-                );
-              })}
-            </div>
-          )}
-
-          {goalProgresses.length > 0 && (
-            <div className="mt-3">
-              <p className="font-bold">■今日のコミットメントの進捗（実績/目標）</p>
-              {goalProgresses.map((g) => {
-                const unit = g.unit || "";
-                const todayCur = g.todayCurrent || "—";
-                const dailyTgt = g.dailyTarget || "—";
-                return (
-                  <p key={g.goalId}>　●{g.content}：{todayCur}{unit}/{dailyTgt}{unit}</p>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="mt-3">
-            <p className="font-bold">■コミット目標に対してどんな行動、行動量を取ったのか</p>
-            <p>　●定量面：{quantitativeAction || ""}</p>
-            <p></p>
-            <p>　●定性面：{qualitativeAction || ""}</p>
-          </div>
-
-          <div className="mt-3">
-            <p className="font-bold">■達成：なんで達成できたか、気付き　</p>
-            {achievementLines.length > 0 ? (
-              achievementLines.map((line, i) => (
-                <p key={i}>　●{line}</p>
-              ))
-            ) : (
-              <>
-                <p>　●</p>
-                <p>　●</p>
-                <p>　●</p>
-              </>
-            )}
-          </div>
-
         </div>
       </CardContent>
       <CardFooter className="justify-end">
